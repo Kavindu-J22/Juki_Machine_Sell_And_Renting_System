@@ -37,14 +37,7 @@ function App() {
         <Route path="customers" element={<CustomersPage />} />
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="reports" element={<ReportsPage />} />
-        <Route
-          path="settings"
-          element={
-            <ProtectedRoute allowedRoles={['Admin']}>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
 
       {/* Catch-all redirect */}

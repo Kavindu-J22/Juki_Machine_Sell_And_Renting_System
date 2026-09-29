@@ -10,8 +10,8 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/dashboard', authorize('Admin', 'Partner'), getPartnerDashboard);
-router.post('/capital-draw', authorize('Admin'), logCapitalDraw);
-router.get('/audit-statement', authorize('Admin', 'Partner'), getAuditStatement);
+router.get('/dashboard', getPartnerDashboard);
+router.post('/capital-draw', authorize('Admin', 'Partner'), logCapitalDraw);
+router.get('/audit-statement', getAuditStatement);
 
 module.exports = router;

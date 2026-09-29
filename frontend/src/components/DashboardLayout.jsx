@@ -61,9 +61,9 @@ const DashboardLayout = () => {
 
   // Role-based Navigation mapping
   const getNavigation = () => {
-    const role = user?.role || 'Admin';
+    const userRole = (user?.role || 'Admin').toLowerCase();
 
-    if (role === 'Client') {
+    if (userRole === 'client') {
       return [
         { name: t('dashboard'), path: '/', icon: LayoutDashboard, exact: true },
         { name: t('myEquipment'), path: '/client-portal', icon: Cpu },
@@ -71,7 +71,7 @@ const DashboardLayout = () => {
       ];
     }
 
-    if (role === 'Partner') {
+    if (userRole === 'partner') {
       return [
         { name: t('dashboard'), path: '/', icon: LayoutDashboard, exact: true },
         { name: t('partnerEquity'), path: '/finance', icon: DollarSign },
@@ -90,7 +90,7 @@ const DashboardLayout = () => {
       { name: t('clientCRM'), path: '/customers', icon: Users },
       { name: t('printableInvoice'), path: '/documents', icon: Printer },
       { name: t('reports'), path: '/reports', icon: BarChart3 },
-      { name: t('settings'), path: '/settings', icon: Settings, adminOnly: true }
+      { name: t('settings'), path: '/settings', icon: Settings }
     ];
   };
 
@@ -159,19 +159,24 @@ const DashboardLayout = () => {
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white truncate">{user?.name}</p>
               <div className="flex items-center space-x-1 mt-1">
-                {user?.role === 'Admin' && (
+                {user?.role?.toLowerCase() === 'admin' && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                     <ShieldCheck size={11} className="mr-1" /> ADMIN
                   </span>
                 )}
-                {user?.role === 'Partner' && (
+                {user?.role?.toLowerCase() === 'partner' && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    <Briefcase size={11} className="mr-1" /> PARTNER ({user?.partnerName})
+                    <Briefcase size={11} className="mr-1" /> PARTNER ({user?.partnerName || 'Equity'})
                   </span>
                 )}
-                {user?.role === 'Client' && (
+                {user?.role?.toLowerCase() === 'client' && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     <UserCheck size={11} className="mr-1" /> CLIENT
+                  </span>
+                )}
+                {user?.role?.toLowerCase() === 'staff' && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                    <UserCheck size={11} className="mr-1" /> STAFF
                   </span>
                 )}
               </div>
@@ -182,8 +187,6 @@ const DashboardLayout = () => {
         {/* Navigation Links */}
         <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto py-2">
           {navigation.map((item) => {
-            if (item.adminOnly && user?.role !== 'Admin') return null;
-
             const isActive = item.exact
               ? location.pathname === item.path
               : location.pathname.startsWith(item.path);

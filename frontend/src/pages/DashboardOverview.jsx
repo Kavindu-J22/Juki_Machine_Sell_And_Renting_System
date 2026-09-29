@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Link } from 'react-router-dom';
-import api from '../services/api';
 import { machineService } from '../services/machineService';
 import { salesLedgerService } from '../services/salesLedgerService';
 import { partnerService } from '../services/partnerService';
@@ -41,33 +40,45 @@ const DashboardOverview = () => {
   const loadOverviewData = async () => {
     try {
       setLoading(true);
-      const [resMachines, resDispatches, resPartners] = await Promise.all([
-        machineService.getMachines(),
-        salesLedgerService.getDispatches(),
-        partnerService.getPartnerDashboard(user?.partnerName || 'Anujaya')
-      ]);
 
       let totalMachines = 0;
       let availableSets = 0;
-      if (resMachines.success) {
-        totalMachines = resMachines.data.reduce((acc, m) => acc + (m.initialBatchSets || 1), 0);
-        availableSets = resMachines.data.reduce((acc, m) => acc + (m.availableSets || 0), 0);
+      try {
+        const resMachines = await machineService.getMachines();
+        if (resMachines?.success) {
+          totalMachines = resMachines.data.reduce((acc, m) => acc + (m.initialBatchSets || 1), 0);
+          availableSets = resMachines.data.reduce((acc, m) => acc + (m.availableSets || 0), 0);
+        }
+      } catch (e) {
+        console.warn('Machine fetch skipped:', e.message);
       }
 
+      let totalDispatches = 0;
       let totalRevenueLkr = 0;
-      if (resDispatches.success) {
-        totalRevenueLkr = resDispatches.data.reduce((acc, d) => acc + (d.grandTotalLkr || 0), 0);
+      try {
+        const resDispatches = await salesLedgerService.getDispatches();
+        if (resDispatches?.success) {
+          totalDispatches = resDispatches.data.length;
+          totalRevenueLkr = resDispatches.data.reduce((acc, d) => acc + (d.grandTotalLkr || 0), 0);
+        }
+      } catch (e) {
+        console.warn('Dispatch fetch skipped:', e.message);
       }
 
       let partnerNetLkr = 0;
-      if (resPartners.success) {
-        partnerNetLkr = resPartners.data.summary?.totalConsortiumNet || 0;
+      try {
+        const resPartners = await partnerService.getPartnerDashboard(user?.partnerName || 'Anujaya');
+        if (resPartners?.success) {
+          partnerNetLkr = resPartners.data.summary?.totalConsortiumNet || 0;
+        }
+      } catch (e) {
+        console.warn('Partner dashboard fetch skipped:', e.message);
       }
 
       setStats({
         totalMachines,
         availableSets,
-        totalDispatches: resDispatches.data?.length || 0,
+        totalDispatches,
         totalRevenueLkr,
         partnerNetLkr
       });
