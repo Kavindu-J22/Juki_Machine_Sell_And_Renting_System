@@ -179,6 +179,89 @@ const DashboardOverview = () => {
           <p className="text-xs text-slate-400 font-bold">50/50 Consortium Profit Split</p>
         </div>
       </div>
+
+      {/* Consortium Administration & Company Settings Quick Access Panel (Admin Only) */}
+      {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase()?.includes('admin')) && (
+        <div className="glass-panel p-6 rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900/90 via-slate-900 to-indigo-950/30">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                <Building2 size={18} className="text-indigo-400" />
+                <span>Consortium Administration & Company Settings</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Configure global exchange rate, consortium tax profile, partner equity shareholding, and user accounts.
+              </p>
+            </div>
+            <Link
+              to="/settings"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-1.5 self-start sm:self-auto"
+            >
+              <span>Open Company Settings Panel</span>
+              <ArrowUpRight size={14} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+            <Link
+              to="/settings"
+              className="p-4 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/40 hover:border-indigo-500/40 transition-all group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
+                  💱
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">
+                    USD/LKR Exchange Anchor
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Live anchor: 1 USD = 330 LKR
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              to="/settings"
+              className="p-4 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/40 hover:border-indigo-500/40 transition-all group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">
+                  🏢
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">
+                    Consortium Profile & Taxes
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    VAT, SVAT, and registration
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              to="/settings"
+              className="p-4 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/40 hover:border-indigo-500/40 transition-all group"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
+                  👥
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">
+                    User Management & Roles
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Manage Admin, Partner, & Staff
+                  </p>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

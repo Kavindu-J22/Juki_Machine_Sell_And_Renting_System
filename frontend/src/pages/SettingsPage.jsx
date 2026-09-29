@@ -233,6 +233,24 @@ const SettingsPage = () => {
     }
   };
 
+  if (!isAdmin) {
+    return (
+      <div className="glass-panel p-12 rounded-3xl border border-rose-500/30 text-center max-w-lg mx-auto my-12 space-y-4">
+        <ShieldCheck className="w-12 h-12 text-rose-400 mx-auto" />
+        <h2 className="text-xl font-bold text-white">Administrator Access Only</h2>
+        <p className="text-xs text-slate-400">
+          Company Settings and System Administration are strictly restricted to Consortium Administrator accounts.
+        </p>
+        <a
+          href="/"
+          className="inline-block px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/30"
+        >
+          Return to Dashboard
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}

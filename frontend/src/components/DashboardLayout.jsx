@@ -59,10 +59,11 @@ const DashboardLayout = () => {
     navigate('/login');
   };
 
+  const userRole = (user?.role || '').toLowerCase();
+  const isAdmin = userRole === 'admin' || userRole.includes('admin');
+
   // Role-based Navigation mapping
   const getNavigation = () => {
-    const userRole = (user?.role || 'Admin').toLowerCase();
-
     if (userRole === 'client') {
       return [
         { name: t('dashboard'), path: '/', icon: LayoutDashboard, exact: true },
@@ -81,14 +82,26 @@ const DashboardLayout = () => {
       ];
     }
 
-    // Default Admin & Staff
+    if (isAdmin) {
+      return [
+        { name: t('dashboard'), path: '/', icon: LayoutDashboard, exact: true },
+        { name: t('companySettings'), path: '/settings', icon: Building2 },
+        { name: t('machineryMaster'), path: '/machines', icon: Cpu },
+        { name: t('posDispatch'), path: '/sales-ledger', icon: FileText },
+        { name: t('partnerEquity'), path: '/finance', icon: DollarSign },
+        { name: t('clientCRM'), path: '/customers', icon: Users },
+        { name: t('printableInvoice'), path: '/documents', icon: Printer },
+        { name: t('reports'), path: '/reports', icon: BarChart3 }
+      ];
+    }
+
+    // Default Operational Staff (No Company Settings)
     return [
       { name: t('dashboard'), path: '/', icon: LayoutDashboard, exact: true },
       { name: t('machineryMaster'), path: '/machines', icon: Cpu },
       { name: t('posDispatch'), path: '/sales-ledger', icon: FileText },
       { name: t('partnerEquity'), path: '/finance', icon: DollarSign },
       { name: t('clientCRM'), path: '/customers', icon: Users },
-      { name: t('companySettings'), path: '/settings', icon: Building2 },
       { name: t('printableInvoice'), path: '/documents', icon: Printer },
       { name: t('reports'), path: '/reports', icon: BarChart3 }
     ];
@@ -181,6 +194,15 @@ const DashboardLayout = () => {
                 )}
               </div>
             </div>
+            {isAdmin && (
+              <Link
+                to="/settings"
+                className="p-2 rounded-xl text-slate-400 hover:text-indigo-300 hover:bg-slate-700/60 border border-slate-700/50 transition-all"
+                title="Company Settings & Admin Panel"
+              >
+                <Settings size={16} />
+              </Link>
+            )}
           </div>
         </div>
 
@@ -268,12 +290,24 @@ const DashboardLayout = () => {
             </span>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {/* Live Exchange Rate Anchor Display */}
             <div className="px-3 py-1 bg-indigo-950/40 rounded-xl border border-indigo-500/30 flex items-center space-x-2 text-xs">
               <span className="text-slate-400">{t('liveRate')}:</span>
               <span className="text-amber-400 font-extrabold font-mono">1 USD = 330 LKR</span>
             </div>
+
+            {/* Quick Link to Company Settings (Admin only) */}
+            {isAdmin && (
+              <Link
+                to="/settings"
+                className="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm"
+                title="Consortium Company Settings & Admin Panel"
+              >
+                <Building2 size={14} />
+                <span>{t('companySettings')}</span>
+              </Link>
+            )}
 
             <div className="text-right">
               <p className="text-[11px] text-slate-400">{t('welcomeBack')}</p>
