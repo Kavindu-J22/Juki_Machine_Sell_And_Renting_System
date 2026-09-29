@@ -4,11 +4,12 @@ import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './components/DashboardLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardOverview from './pages/DashboardOverview';
-import SettingsPage from './pages/SettingsPage';
+import InventoryPage from './pages/InventoryPage';
+import SalesLedgerPage from './pages/SalesLedgerPage';
+import ReconciliationPage from './pages/ReconciliationPage';
+import ClientPortalPage from './pages/ClientPortalPage';
 import CustomersPage from './pages/CustomersPage';
-import MachinesPage from './pages/MachinesPage';
-import RentalsPage from './pages/RentalsPage';
-import FinancePage from './pages/FinancePage';
+import SettingsPage from './pages/SettingsPage';
 import DocumentsPage from './pages/DocumentsPage';
 import ReportsPage from './pages/ReportsPage';
 
@@ -28,6 +29,14 @@ function App() {
         }
       >
         <Route index element={<DashboardOverview />} />
+        <Route path="machines" element={<InventoryPage />} />
+        <Route path="sales-ledger" element={<SalesLedgerPage />} />
+        <Route path="finance" element={<ReconciliationPage />} />
+        <Route path="client-portal" element={<ClientPortalPage />} />
+        <Route path="service-requests" element={<ClientPortalPage />} />
+        <Route path="customers" element={<CustomersPage />} />
+        <Route path="documents" element={<DocumentsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route
           path="settings"
           element={
@@ -36,12 +45,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="customers" element={<CustomersPage />} />
-        <Route path="machines" element={<MachinesPage />} />
-        <Route path="rentals" element={<RentalsPage />} />
-        <Route path="finance" element={<FinancePage />} />
-        <Route path="documents" element={<DocumentsPage />} />
-        <Route path="reports" element={<ReportsPage />} />
       </Route>
 
       {/* Catch-all redirect */}

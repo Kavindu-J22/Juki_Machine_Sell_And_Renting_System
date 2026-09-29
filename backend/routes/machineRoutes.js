@@ -4,22 +4,28 @@ const {
   createMachine,
   searchBySerialNumber,
   getMachineById,
-  updateMachine
+  updateMachine,
+  exportCsv,
+  importCsv
 } = require('../controllers/machineController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.get('/search', protect, searchBySerialNumber);
+router.use(protect);
+
+router.get('/search', searchBySerialNumber);
+router.get('/export/csv', authorize('Admin'), exportCsv);
+router.post('/import/csv', authorize('Admin'), importCsv);
 
 router
   .route('/')
-  .get(protect, getMachines)
-  .post(protect, createMachine);
+  .get(getMachines)
+  .post(authorize('Admin', 'Staff'), createMachine);
 
 router
   .route('/:id')
-  .get(protect, getMachineById)
-  .put(protect, updateMachine);
+  .get(getMachineById)
+  .put(authorize('Admin', 'Staff'), updateMachine);
 
 module.exports = router;

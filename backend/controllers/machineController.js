@@ -1,15 +1,26 @@
 const Machine = require('../models/Machine');
 const Rental = require('../models/Rental');
+const CompanySettings = require('../models/CompanySettings');
 
-// @desc    Register a new machine (Local / China import or Partner Sub-lease)
+// @desc    Register a new machine / SKU in Machinery Master
 // @route   POST /api/machines
-// @access  Private
+// @access  Private (Admin, Staff)
 exports.createMachine = async (req, res) => {
   try {
     const {
+      sku,
       serialNumber,
       brand,
       model,
+      modelSpecs,
+      initialBatchSets,
+      unit,
+      fobUsd,
+      customsDutyLkr,
+      wholesaleBenchmarkLkr,
+      retailBenchmarkLkr,
+      serialNumbers,
+      partnerShare,
       status,
       isPartnerMachine,
       partnerDetails,
@@ -17,71 +28,75 @@ exports.createMachine = async (req, res) => {
       importDetails
     } = req.body;
 
-    if (!serialNumber || !model) {
+    if (!model) {
       return res.status(400).json({
         success: false,
-        message: 'Serial number and machine model are required.'
+        message: 'Machine model is required.'
       });
     }
 
-    // Check duplicate serial number
-    const existingMachine = await Machine.findOne({
-      serialNumber: serialNumber.trim()
-    });
+    // Get current USD to LKR Exchange Rate
+    const settings = await CompanySettings.findOne();
+    const rate = settings?.usdToLkrRate || 330;
 
-    if (existingMachine) {
-      return res.status(400).json({
-        success: false,
-        message: `Machine with serial number '${serialNumber}' already exists.`
-      });
-    }
+    const fob = Number(fobUsd) || 0;
+    const duty = Number(customsDutyLkr) || Number(importDetails?.customDuty) || 0;
+    const landedCostLkr = Math.round(fob * rate + duty);
 
-    // Auto-generate Machine ID format: MAC-YYYY-XXXX
+    // SKU generation if missing
     const currentYear = new Date().getFullYear();
     const count = await Machine.countDocuments();
+    const generatedSku = sku || `JK-SKU-${(count + 1).toString().padStart(4, '0')}`;
     const machineId = `MAC-${currentYear}-${(count + 1).toString().padStart(4, '0')}`;
 
-    // Auto-calculate Total Landing Cost if imported
-    let calculatedImportDetails = {
-      shippingCost: 0,
-      taxCost: 0,
-      customDuty: 0,
-      totalLandingCost: 0
-    };
-
-    if (importDetails) {
-      const shipping = Number(importDetails.shippingCost) || 0;
-      const tax = Number(importDetails.taxCost) || 0;
-      const duty = Number(importDetails.customDuty) || 0;
-      calculatedImportDetails = {
-        shippingCost: shipping,
-        taxCost: tax,
-        customDuty: duty,
-        totalLandingCost: shipping + tax + duty
-      };
-    }
+    const batchSets = Number(initialBatchSets) || 1;
+    const serialList = Array.isArray(serialNumbers)
+      ? serialNumbers
+      : typeof serialNumbers === 'string' && serialNumbers.trim()
+      ? serialNumbers.split(',').map((s) => s.trim())
+      : serialNumber
+      ? [serialNumber.trim()]
+      : [];
 
     const machine = await Machine.create({
       machineId,
-      serialNumber: serialNumber.trim(),
+      sku: generatedSku.trim(),
+      serialNumber: serialNumber ? serialNumber.trim() : (serialList[0] || generatedSku),
       brand: brand ? brand.trim() : 'Juki',
       model: model.trim(),
-      status: status || (isPartnerMachine ? 'Partner-Allocated' : 'Available'),
+      modelSpecs: modelSpecs ? modelSpecs.trim() : '',
+      initialBatchSets: batchSets,
+      dispatchedCounts: 0,
+      availableSets: batchSets,
+      unit: unit || 'Set',
+      fobUsd: fob,
+      customsDutyLkr: duty,
+      landedCostLkr: landedCostLkr || Number(importDetails?.totalLandingCost) || 0,
+      wholesaleBenchmarkLkr: Number(wholesaleBenchmarkLkr) || Math.round(landedCostLkr * 1.25),
+      retailBenchmarkLkr: Number(retailBenchmarkLkr) || Math.round(landedCostLkr * 1.45),
+      serialNumbers: serialList,
+      partnerShare: partnerShare || 'Consortium',
+      status: status || 'Available',
       isPartnerMachine: Boolean(isPartnerMachine),
       partnerDetails: isPartnerMachine
         ? {
-            partnerName: partnerDetails?.partnerName || partnerDetails?.name || '',
-            partnerRentCost: Number(partnerDetails?.partnerRentCost || partnerDetails?.rentCost) || 0
+            partnerName: partnerDetails?.partnerName || '',
+            partnerRentCost: Number(partnerDetails?.partnerRentCost) || 0
           }
         : { partnerName: '', partnerRentCost: 0 },
       sourceType: sourceType || 'Local',
-      importDetails: calculatedImportDetails
+      importDetails: {
+        shippingCost: Number(importDetails?.shippingCost) || 0,
+        taxCost: Number(importDetails?.taxCost) || 0,
+        customDuty: duty,
+        totalLandingCost: landedCostLkr
+      }
     });
 
     res.status(201).json({
       success: true,
       data: machine,
-      message: 'Machine registered successfully in inventory'
+      message: 'Equipment registered successfully in Machinery Master'
     });
   } catch (error) {
     res.status(500).json({
@@ -96,13 +111,14 @@ exports.createMachine = async (req, res) => {
 // @access  Private
 exports.getMachines = async (req, res) => {
   try {
-    const { status, brand, sourceType, isPartnerMachine, q } = req.query;
+    const { status, brand, sourceType, isPartnerMachine, partnerShare, q } = req.query;
 
     let filter = {};
 
     if (status) filter.status = status;
     if (brand) filter.brand = new RegExp(brand, 'i');
     if (sourceType) filter.sourceType = sourceType;
+    if (partnerShare) filter.partnerShare = partnerShare;
     if (isPartnerMachine !== undefined) {
       filter.isPartnerMachine = isPartnerMachine === 'true';
     }
@@ -110,8 +126,11 @@ exports.getMachines = async (req, res) => {
     if (q) {
       const searchRegex = new RegExp(q, 'i');
       filter.$or = [
+        { sku: searchRegex },
         { serialNumber: searchRegex },
+        { serialNumbers: searchRegex },
         { model: searchRegex },
+        { modelSpecs: searchRegex },
         { brand: searchRegex },
         { machineId: searchRegex }
       ];
@@ -132,7 +151,7 @@ exports.getMachines = async (req, res) => {
   }
 };
 
-// @desc    Direct lookup machine by serial number (with current holder & full rental history)
+// @desc    Direct lookup machine by serial number
 // @route   GET /api/machines/search?serialNumber=...
 // @access  Private
 exports.searchBySerialNumber = async (req, res) => {
@@ -146,18 +165,18 @@ exports.searchBySerialNumber = async (req, res) => {
       });
     }
 
+    const searchRegex = new RegExp(`^${serialNumber.trim()}$`, 'i');
     const machine = await Machine.findOne({
-      serialNumber: new RegExp(`^${serialNumber.trim()}$`, 'i')
+      $or: [{ serialNumber: searchRegex }, { serialNumbers: searchRegex }, { sku: searchRegex }]
     });
 
     if (!machine) {
       return res.status(404).json({
         success: false,
-        message: `No machine found with serial number '${serialNumber}'`
+        message: `No machine found with serial/SKU '${serialNumber}'`
       });
     }
 
-    // Find all rentals involving this machine
     const rentalHistory = await Rental.find({ machines: machine._id })
       .populate('customer')
       .sort({ createdAt: -1 });
@@ -176,7 +195,7 @@ exports.searchBySerialNumber = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message || 'Server error searching machine by serial number'
+      message: error.message || 'Server error searching machine'
     });
   }
 };
@@ -220,7 +239,7 @@ exports.getMachineById = async (req, res) => {
 
 // @desc    Update machine details
 // @route   PUT /api/machines/:id
-// @access  Private
+// @access  Private (Admin, Staff)
 exports.updateMachine = async (req, res) => {
   try {
     let machine = await Machine.findById(req.params.id);
@@ -232,12 +251,16 @@ exports.updateMachine = async (req, res) => {
       });
     }
 
-    // Recalculate landing cost if importDetails provided
-    if (req.body.importDetails) {
-      const shipping = Number(req.body.importDetails.shippingCost) || 0;
-      const tax = Number(req.body.importDetails.taxCost) || 0;
-      const duty = Number(req.body.importDetails.customDuty) || 0;
-      req.body.importDetails.totalLandingCost = shipping + tax + duty;
+    // Recalculate landed cost if FOB or Duty updated
+    const settings = await CompanySettings.findOne();
+    const rate = settings?.usdToLkrRate || 330;
+
+    const fob = req.body.fobUsd !== undefined ? Number(req.body.fobUsd) : machine.fobUsd;
+    const duty = req.body.customsDutyLkr !== undefined ? Number(req.body.customsDutyLkr) : machine.customsDutyLkr;
+    req.body.landedCostLkr = Math.round(fob * rate + duty);
+
+    if (req.body.serialNumbers && typeof req.body.serialNumbers === 'string') {
+      req.body.serialNumbers = req.body.serialNumbers.split(',').map((s) => s.trim());
     }
 
     machine = await Machine.findByIdAndUpdate(req.params.id, req.body, {
@@ -254,6 +277,92 @@ exports.updateMachine = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || 'Server error updating machine'
+    });
+  }
+};
+
+// @desc    Export Machinery Master to CSV
+// @route   GET /api/machines/export/csv
+// @access  Private (Admin)
+exports.exportCsv = async (req, res) => {
+  try {
+    const machines = await Machine.find().sort({ createdAt: -1 });
+
+    let csv = 'SKU,Brand,Model,ModelSpecs,BatchSets,Dispatched,Available,FOB_USD,Duty_LKR,LandedCost_LKR,Wholesale_LKR,Retail_LKR,PartnerShare,Status,SerialNumbers\n';
+
+    machines.forEach((m) => {
+      const serials = (m.serialNumbers || []).join(';');
+      csv += `"${m.sku}","${m.brand}","${m.model}","${m.modelSpecs || ''}",${m.initialBatchSets},${m.dispatchedCounts},${m.availableSets},${m.fobUsd},${m.customsDutyLkr},${m.landedCostLkr},${m.wholesaleBenchmarkLkr},${m.retailBenchmarkLkr},"${m.partnerShare}","${m.status}","${serials}"\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=MachineryMaster_Export.csv');
+    res.status(200).send(csv);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error exporting CSV'
+    });
+  }
+};
+
+// @desc    Import Machinery Master from CSV / JSON array
+// @route   POST /api/machines/import/csv
+// @access  Private (Admin)
+exports.importCsv = async (req, res) => {
+  try {
+    const { items } = req.body;
+
+    if (!items || !Array.isArray(items)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request body must contain an array of inventory items in "items".'
+      });
+    }
+
+    const settings = await CompanySettings.findOne();
+    const rate = settings?.usdToLkrRate || 330;
+
+    let importedCount = 0;
+    for (const item of items) {
+      const fob = Number(item.fobUsd || item.FOB_USD) || 0;
+      const duty = Number(item.customsDutyLkr || item.Duty_LKR) || 0;
+      const landed = Math.round(fob * rate + duty);
+
+      const sku = item.sku || item.SKU || `JK-SKU-${Date.now().toString().slice(-4)}`;
+      const batchSets = Number(item.initialBatchSets || item.BatchSets) || 1;
+
+      await Machine.findOneAndUpdate(
+        { sku },
+        {
+          sku,
+          brand: item.brand || item.Brand || 'Juki',
+          model: item.model || item.Model || 'Standard Lockstitch',
+          modelSpecs: item.modelSpecs || item.ModelSpecs || '',
+          initialBatchSets: batchSets,
+          unit: item.unit || 'Set',
+          fobUsd: fob,
+          customsDutyLkr: duty,
+          landedCostLkr: landed,
+          wholesaleBenchmarkLkr: Number(item.wholesaleBenchmarkLkr || item.Wholesale_LKR) || Math.round(landed * 1.25),
+          retailBenchmarkLkr: Number(item.retailBenchmarkLkr || item.Retail_LKR) || Math.round(landed * 1.45),
+          partnerShare: item.partnerShare || item.PartnerShare || 'Consortium',
+          status: item.status || item.Status || 'Available'
+        },
+        { upsert: true, new: true }
+      );
+      importedCount++;
+    }
+
+    res.status(200).json({
+      success: true,
+      count: importedCount,
+      message: `Successfully imported ${importedCount} machinery master items.`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error importing inventory'
     });
   }
 };

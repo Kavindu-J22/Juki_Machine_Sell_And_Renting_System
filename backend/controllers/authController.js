@@ -23,17 +23,19 @@ const sendTokenResponse = (user, statusCode, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        partnerName: user.partnerName || '',
+        customerRef: user.customerRef || null
       }
     });
 };
 
-// @desc    Register User / Admin
+// @desc    Register User / Partner / Client
 // @route   POST /api/auth/register
-// @access  Public (or Admin protected in production)
+// @access  Public
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, partnerName, customerRef } = req.body;
 
     // Check if user already exists
     const userExists = await User.findOne({ email: email.toLowerCase() });
@@ -49,7 +51,9 @@ exports.register = async (req, res) => {
       name,
       email,
       password,
-      role: role || 'Staff'
+      role: role || 'Staff',
+      partnerName: partnerName || '',
+      customerRef: customerRef || null
     });
 
     sendTokenResponse(user, 201, res);

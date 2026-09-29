@@ -5,6 +5,7 @@ export const machineService = {
     const params = new URLSearchParams();
     if (filters.status) params.append('status', filters.status);
     if (filters.sourceType) params.append('sourceType', filters.sourceType);
+    if (filters.partnerShare) params.append('partnerShare', filters.partnerShare);
     if (filters.isPartnerMachine !== undefined) {
       params.append('isPartnerMachine', filters.isPartnerMachine);
     }
@@ -31,6 +32,16 @@ export const machineService = {
 
   updateMachine: async (id, machineData) => {
     const response = await api.put(`/machines/${id}`, machineData);
+    return response.data;
+  },
+
+  exportCsv: async () => {
+    const response = await api.get('/machines/export/csv', { responseType: 'blob' });
+    return response.data;
+  },
+
+  importCsv: async (items) => {
+    const response = await api.post('/machines/import/csv', { items });
     return response.data;
   }
 };

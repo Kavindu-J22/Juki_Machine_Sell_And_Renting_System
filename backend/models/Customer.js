@@ -12,7 +12,17 @@ const customerSchema = new mongoose.Schema(
       required: [true, 'Please add customer name'],
       trim: true
     },
-    nic: {
+    factoryName: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    email: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    nicOrRegNumber: {
       type: String,
       trim: true,
       default: ''
@@ -26,6 +36,24 @@ const customerSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: ''
+    },
+    region: {
+      type: String,
+      default: 'Western Province',
+      trim: true
+    },
+    taxId: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    totalTurnover: {
+      type: Number,
+      default: 0
+    },
+    outstandingBalance: {
+      type: Number,
+      default: 0
     },
     status: {
       type: String,

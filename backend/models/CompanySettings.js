@@ -5,47 +5,52 @@ const companySettingsSchema = new mongoose.Schema(
     companyName: {
       type: String,
       required: [true, 'Please add company name'],
-      default: 'Juki Sewing Machine Centre (Pvt) Ltd'
+      default: 'ANUJAYA & GLOBAL ENTERPRISES'
+    },
+    tagline: {
+      type: String,
+      default: 'Industrial Apparel Machinery & Logistics Consortium'
     },
     address: {
       type: String,
-      default: 'No. 145, Main Street, Colombo 11, Sri Lanka'
+      default: 'Consortium Complex, No. 458, Katunayake Free Trade Zone Rd, Seeduwa, Sri Lanka'
     },
     phone: {
       type: String,
-      default: '+94 11 234 5678'
+      default: '+94 11 488 9900 / +94 77 123 4567'
     },
     email: {
       type: String,
-      default: 'sales@jukirentals.lk'
+      default: 'info@anujayaglobal.lk'
     },
     registrationNumber: {
       type: String,
-      default: 'PV-98765-SL'
+      default: 'PV-99201-CONSORTIUM'
     },
-    logoUrl: {
-      type: String,
-      default: ''
+    usdToLkrRate: {
+      type: Number,
+      default: 330
     },
     taxDetails: {
-      taxId: { type: String, default: 'TIN-100293847' },
-      vatNumber: { type: String, default: 'VAT-99201' },
+      taxId: { type: String, default: 'TIN-900293847' },
+      vatNumber: { type: String, default: 'VAT-88201-LK' },
+      svatNumber: { type: String, default: 'SVAT-100293' },
       taxRatePercentage: { type: Number, default: 18 }
     },
+    partnerEquity: {
+      anujayaSharePercent: { type: Number, default: 50 },
+      globalSharePercent: { type: Number, default: 50 }
+    },
     bankDetails: {
-      bankName: { type: String, default: 'Commercial Bank of Ceylon' },
-      branch: { type: String, default: 'Colombo Main Branch' },
-      accountNumber: { type: String, default: '1000-2938-4720' },
-      accountName: { type: String, default: 'Juki Sewing Machine Centre' }
+      bankName: { type: String, default: 'Commercial Bank of Ceylon PLC' },
+      branch: { type: String, default: 'Katunayake FTZ Branch' },
+      accountNumber: { type: String, default: '1000-8849-2910' },
+      accountName: { type: String, default: 'Anujaya & Global Enterprises Consortium' }
     },
     agreementTerms: {
       type: String,
       default:
-        '1. The machine remains the sole property of Juki Sewing Centre.\n2. Rent must be paid monthly in advance by the due date.\n3. Any damages due to improper operation will be billed to the customer.\n4. Machine must be returned upon termination of agreement.'
-    },
-    quotationFooter: {
-      type: String,
-      default: 'Thank you for choosing Juki Sewing Centre! Quotation valid for 14 days.'
+        '1. Equipment remains property of Anujaya & Global Enterprises Consortium.\n2. Warranty covers manufacturing defects for 12 months.\n3. All sales & dispatches subject to VAT/SVAT compliance.'
     }
   },
   {

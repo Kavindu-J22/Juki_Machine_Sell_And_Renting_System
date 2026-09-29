@@ -28,8 +28,17 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['Admin', 'Staff'],
+      enum: ['Admin', 'Partner', 'Client', 'Staff'],
       default: 'Staff'
+    },
+    partnerName: {
+      type: String,
+      enum: ['Anujaya', 'Global', 'Consortium', ''],
+      default: ''
+    },
+    customerRef: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Customer'
     }
   },
   {
