@@ -263,6 +263,18 @@ exports.updateMachine = async (req, res) => {
       req.body.serialNumbers = req.body.serialNumbers.split(',').map((s) => s.trim());
     }
 
+    if (req.body.initialBatchSets !== undefined) {
+      const dispatched = machine.dispatchedCounts || 0;
+      req.body.availableSets = Math.max(0, Number(req.body.initialBatchSets) - dispatched);
+      if (req.body.availableSets === 0) {
+        req.body.status = 'Out of Stock';
+      } else if (req.body.availableSets < 5 && machine.status !== 'Rented' && machine.status !== 'Maintenance') {
+        req.body.status = 'Low Stock';
+      } else if (machine.status !== 'Rented' && machine.status !== 'Maintenance') {
+        req.body.status = 'Available';
+      }
+    }
+
     machine = await Machine.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
@@ -277,6 +289,34 @@ exports.updateMachine = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || 'Server error updating machine'
+    });
+  }
+};
+
+// @desc    Delete machine
+// @route   DELETE /api/machines/:id
+// @access  Private (Admin, Staff)
+exports.deleteMachine = async (req, res) => {
+  try {
+    const machine = await Machine.findById(req.params.id);
+
+    if (!machine) {
+      return res.status(404).json({
+        success: false,
+        message: 'Machine not found'
+      });
+    }
+
+    await Machine.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: `Equipment SKU ${machine.sku} (${machine.brand} ${machine.model}) deleted successfully`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error deleting machine'
     });
   }
 };

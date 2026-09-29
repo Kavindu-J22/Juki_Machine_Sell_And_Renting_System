@@ -19,6 +19,7 @@ const ReconciliationPage = () => {
   const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentPartnerView, setCurrentPartnerView] = useState('Anujaya');
 
   // Capital Draw Modal
@@ -44,12 +45,24 @@ const ReconciliationPage = () => {
   const loadDashboard = async () => {
     try {
       setLoading(true);
+      setError(null);
       const res = await partnerService.getPartnerDashboard(currentPartnerView);
       if (res.success) {
         setData(res.data);
+      } else {
+        setError(res.message || 'Failed to load partner equity data.');
       }
     } catch (err) {
       console.error('Error fetching partner equity dashboard:', err);
+      const msg = err.response?.data?.message || err.message || 'Failed to fetch partner equity data.';
+      const status = err.response?.status;
+      if (status === 403) {
+        setError(`Access Denied (403): Your user role does not have permission to view partner equity data. Please contact the system administrator.`);
+      } else if (status === 401) {
+        setError('Authentication error (401): Your session may have expired. Please log out and log back in.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -154,6 +167,23 @@ const ReconciliationPage = () => {
       {loading ? (
         <div className="flex items-center justify-center p-12">
           <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+        </div>
+      ) : error ? (
+        <div className="glass-panel p-8 rounded-3xl border border-rose-500/30 bg-rose-950/20 text-center space-y-4">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
+            <DollarSign className="text-rose-400 w-7 h-7" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-rose-300 mb-1">Unable to Load Partner Equity Data</h3>
+            <p className="text-xs text-slate-400 max-w-lg mx-auto">{error}</p>
+          </div>
+          <button
+            onClick={loadDashboard}
+            className="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl inline-flex items-center space-x-2 transition-all"
+          >
+            <Loader2 size={14} />
+            <span>Retry Loading</span>
+          </button>
         </div>
       ) : !data ? (
         <p className="text-slate-400 text-xs">Error loading partner equity data.</p>

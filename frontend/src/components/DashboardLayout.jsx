@@ -71,7 +71,7 @@ const DashboardLayout = () => {
       ];
     }
 
-    if (userRole === 'partner') {
+    if (userRole === 'partner' || userRole.includes('partner')) {
       return [
         { name: t('dashboard'), path: '/', icon: LayoutDashboard, exact: true },
         { name: t('partnerEquity'), path: '/finance', icon: DollarSign },
@@ -88,9 +88,9 @@ const DashboardLayout = () => {
       { name: t('posDispatch'), path: '/sales-ledger', icon: FileText },
       { name: t('partnerEquity'), path: '/finance', icon: DollarSign },
       { name: t('clientCRM'), path: '/customers', icon: Users },
+      { name: t('companySettings'), path: '/settings', icon: Building2 },
       { name: t('printableInvoice'), path: '/documents', icon: Printer },
-      { name: t('reports'), path: '/reports', icon: BarChart3 },
-      { name: t('settings'), path: '/settings', icon: Settings }
+      { name: t('reports'), path: '/reports', icon: BarChart3 }
     ];
   };
 
@@ -159,12 +159,12 @@ const DashboardLayout = () => {
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white truncate">{user?.name}</p>
               <div className="flex items-center space-x-1 mt-1">
-                {user?.role?.toLowerCase() === 'admin' && (
+                {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase()?.includes('admin')) && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                     <ShieldCheck size={11} className="mr-1" /> ADMIN
                   </span>
                 )}
-                {user?.role?.toLowerCase() === 'partner' && (
+                {(user?.role?.toLowerCase() === 'partner' || user?.role?.toLowerCase()?.includes('partner')) && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                     <Briefcase size={11} className="mr-1" /> PARTNER ({user?.partnerName || 'Equity'})
                   </span>

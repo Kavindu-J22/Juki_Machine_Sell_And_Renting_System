@@ -17,7 +17,8 @@ import {
   Wrench,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Building2
 } from 'lucide-react';
 
 const DashboardOverview = () => {
@@ -107,7 +108,7 @@ const DashboardOverview = () => {
             </p>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Link
               to="/sales-ledger"
               className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-1.5"
@@ -115,6 +116,15 @@ const DashboardOverview = () => {
               <span>{t('posDispatch')}</span>
               <ArrowUpRight size={14} />
             </Link>
+            {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase()?.includes('admin')) && (
+              <Link
+                to="/settings"
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white border border-slate-700 text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5"
+              >
+                <Building2 size={14} />
+                <span>{t('companySettings')}</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>

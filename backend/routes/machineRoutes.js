@@ -5,6 +5,7 @@ const {
   searchBySerialNumber,
   getMachineById,
   updateMachine,
+  deleteMachine,
   exportCsv,
   importCsv
 } = require('../controllers/machineController');
@@ -26,6 +27,7 @@ router
 router
   .route('/:id')
   .get(getMachineById)
-  .put(authorize('Admin', 'Staff'), updateMachine);
+  .put(authorize('Admin', 'Staff'), updateMachine)
+  .delete(authorize('Admin', 'Staff'), deleteMachine);
 
 module.exports = router;

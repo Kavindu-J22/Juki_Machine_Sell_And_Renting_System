@@ -35,6 +35,11 @@ export const machineService = {
     return response.data;
   },
 
+  deleteMachine: async (id) => {
+    const response = await api.delete(`/machines/${id}`);
+    return response.data;
+  },
+
   exportCsv: async () => {
     const response = await api.get('/machines/export/csv', { responseType: 'blob' });
     return response.data;

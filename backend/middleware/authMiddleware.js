@@ -41,13 +41,31 @@ exports.protect = async (req, res, next) => {
   }
 };
 
-// Grant access to specific roles
+// Grant access to specific roles (with support for role variations)
 exports.authorize = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized to access this route. User not found.'
+      });
+    }
+
+    const userRole = (req.user.role || '').trim();
+    const isConsortiumAdmin = userRole.toLowerCase().includes('admin');
+    const isPartnerUser = userRole.toLowerCase().includes('partner');
+
+    const hasAccess = roles.some((r) => {
+      if (r.toLowerCase() === userRole.toLowerCase()) return true;
+      if (r === 'Admin' && isConsortiumAdmin) return true;
+      if (r === 'Partner' && isPartnerUser) return true;
+      return false;
+    });
+
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
-        message: `User role '${req.user ? req.user.role : 'Guest'}' is not authorized to access this route.`
+        message: `User role '${userRole}' is not authorized to access this route.`
       });
     }
     next();

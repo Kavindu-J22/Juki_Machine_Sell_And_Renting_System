@@ -18,7 +18,9 @@ import {
   FileSpreadsheet,
   Globe,
   Tag,
-  DollarSign
+  DollarSign,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 
 const InventoryPage = () => {
@@ -35,7 +37,9 @@ const InventoryPage = () => {
 
   // Add / Edit Machine Modal state
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   // CSV Import Modal state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -114,7 +118,49 @@ const InventoryPage = () => {
     }
   };
 
-  const handleCreateMachine = async (e) => {
+  const handleOpenAddModal = () => {
+    setEditingId(null);
+    setFormData({
+      sku: '',
+      brand: 'Juki',
+      model: '',
+      modelSpecs: '',
+      initialBatchSets: 1,
+      unit: 'Set',
+      fobUsd: 0,
+      customsDutyLkr: 0,
+      wholesaleBenchmarkLkr: 0,
+      retailBenchmarkLkr: 0,
+      serialNumbers: '',
+      partnerShare: 'Consortium',
+      status: 'Available'
+    });
+    setShowAddModal(true);
+  };
+
+  const handleOpenEditModal = (machine) => {
+    setEditingId(machine._id);
+    setFormData({
+      sku: machine.sku || '',
+      brand: machine.brand || 'Juki',
+      model: machine.model || '',
+      modelSpecs: machine.modelSpecs || '',
+      initialBatchSets: machine.initialBatchSets || 1,
+      unit: machine.unit || 'Set',
+      fobUsd: machine.fobUsd || 0,
+      customsDutyLkr: machine.customsDutyLkr || 0,
+      wholesaleBenchmarkLkr: machine.wholesaleBenchmarkLkr || 0,
+      retailBenchmarkLkr: machine.retailBenchmarkLkr || 0,
+      serialNumbers: Array.isArray(machine.serialNumbers)
+        ? machine.serialNumbers.join(', ')
+        : machine.serialNumber || '',
+      partnerShare: machine.partnerShare || 'Consortium',
+      status: machine.status || 'Available'
+    });
+    setShowAddModal(true);
+  };
+
+  const handleSaveMachine = async (e) => {
     e.preventDefault();
     if (!formData.model) {
       alert('Machine Model is required.');
@@ -123,30 +169,46 @@ const InventoryPage = () => {
 
     try {
       setSubmitting(true);
-      const res = await machineService.createMachine(formData);
+      let res;
+      if (editingId) {
+        res = await machineService.updateMachine(editingId, formData);
+      } else {
+        res = await machineService.createMachine(formData);
+      }
+
       if (res.success) {
         setShowAddModal(false);
-        setFormData({
-          sku: '',
-          brand: 'Juki',
-          model: '',
-          modelSpecs: '',
-          initialBatchSets: 1,
-          unit: 'Set',
-          fobUsd: 0,
-          customsDutyLkr: 0,
-          wholesaleBenchmarkLkr: 0,
-          retailBenchmarkLkr: 0,
-          serialNumbers: '',
-          partnerShare: 'Consortium',
-          status: 'Available'
-        });
+        setEditingId(null);
+        alert(res.message);
         loadMachines();
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Error registering machine');
+      alert(err.response?.data?.message || 'Error saving machine details');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteMachine = async (machine) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete Equipment SKU '${machine.sku}' (${machine.brand} ${machine.model})?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDeletingId(machine._id);
+      const res = await machineService.deleteMachine(machine._id);
+      if (res.success) {
+        alert(res.message);
+        loadMachines();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error deleting equipment SKU');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -242,7 +304,7 @@ const InventoryPage = () => {
           </button>
 
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={handleOpenAddModal}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/30 flex items-center space-x-1.5"
           >
             <Plus size={16} />
@@ -317,6 +379,7 @@ const InventoryPage = () => {
                   <th className="p-4 text-right">Wholesale / Retail</th>
                   <th className="p-4 text-center">Shareholding</th>
                   <th className="p-4 text-center">Status</th>
+                  <th className="p-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-mono">
@@ -370,6 +433,31 @@ const InventoryPage = () => {
                         </span>
                       )}
                     </td>
+                    <td className="p-4 text-center font-sans">
+                      <div className="flex items-center justify-center space-x-2">
+                        <button
+                          onClick={() => handleOpenEditModal(machine)}
+                          className="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg border border-indigo-500/30 transition-all font-bold flex items-center space-x-1"
+                          title="Edit Equipment SKU"
+                        >
+                          <Pencil size={13} />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMachine(machine)}
+                          disabled={deletingId === machine._id}
+                          className="px-2.5 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-lg border border-rose-500/30 transition-all font-bold flex items-center space-x-1 disabled:opacity-50"
+                          title="Delete Equipment SKU"
+                        >
+                          {deletingId === machine._id ? (
+                            <Loader2 size={13} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={13} />
+                          )}
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -378,18 +466,20 @@ const InventoryPage = () => {
         </div>
       )}
 
-      {/* Add / Register Equipment Modal with complete field persistence */}
+      {/* Add / Edit Equipment Modal with complete field persistence */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="glass-panel max-w-2xl w-full p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-lg font-bold text-white">Register Equipment SKU in Machinery Master</h3>
+              <h3 className="text-lg font-bold text-white">
+                {editingId ? 'Edit Equipment SKU in Machinery Master' : 'Register Equipment SKU in Machinery Master'}
+              </h3>
               <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateMachine} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveMachine} className="space-y-4 text-xs">
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block font-bold text-slate-300 uppercase mb-1">SKU Code *</label>
@@ -555,7 +645,7 @@ const InventoryPage = () => {
                   disabled={submitting}
                   className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30"
                 >
-                  {submitting ? 'Registering...' : 'Save Equipment SKU'}
+                  {submitting ? 'Saving...' : editingId ? 'Update Equipment SKU' : 'Save Equipment SKU'}
                 </button>
               </div>
             </form>
